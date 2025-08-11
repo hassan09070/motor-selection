@@ -1,0 +1,26 @@
+Torque and Power Results
+Motor,Total Torque (N⋅m),Total Torque with SF (N⋅m),Torque Before Reduction (N⋅m),Torque Before Reduction with SF (N⋅m),Power (W),Power with SF (W)
+Motor 1,405.539,608.309,8.111,12.166,2547.890,3821.836
+Motor 2,281.944,422.916,5.639,8.458,1771.375,2657.063
+Motor 3,150.714,226.071,3.014,4.521,946.895,1420.343
+Motor 4,85.776,128.663,1.716,2.573,538.905,808.357
+Motor 5,44.309,66.464,0.886,1.329,278.382,417.573
+Motor 6,11.741,17.612,0.235,0.352,73.768,110.652
+
+Motor Specifications
+Motor,Power Rating (W),Flange Size (mm),Voltage Type,Model Name,Company Name,Price ($),Motor Weight (kg)
+Motor 1,3000.0,130.0,DC,D130M-14320C5-E,DMKE - cn-bldc.com,0.0,9.46
+Motor 2,1800.0,110.0,DC,D110M-06030C5-E,DMKE - cn-bldc.com,0.0,0.0
+Motor 3,1000.0,80.0,AC,80DNMA1-001,Lunyee Industries,0.0,4.22
+Motor 4,600.0,60.0,DC,D60M-01930A5-E,DMKE - cn-bldc.com,0.0,1.5
+Motor 5,400.0,60.0,AC,60DNMA1-0D40,Lunyee Industries,0.0,1.89
+Motor 6,100.0,40.0,AC,40DNMA2-0D10D,Lunyee Industries,0.0,0.8
+
+Motor Specifications with Safety Factor
+Motor,Power Rating (W),Flange Size (mm),Voltage Type,Model Name,Company Name,Price ($),Motor Weight (kg)
+Motor 1,3900.000,130.000,DC,ZLAC130ASM3800,WWW.ZLINGKJ.COM,0.000,12.100
+Motor 2,3000.000,130.000,DC,D130M-14320C5-E,DMKE - cn-bldc.com,0.000,9.460
+Motor 3,1500.000,130.000,DC,D130M-07020C5-E,DMKE - cn-bldc.com,0.000,9.460
+Motor 4,1000.000,80.000,AC,80DNMA1-001,Lunyee Industries,0.000,4.220
+Motor 5,600.000,60.000,DC,D60M-01930A5-E,DMKE - cn-bldc.com,0.000,1.500
+Motor 6,200.000,60.000,AC,60DNMA1-0D20,Lunyee Industries,0.000,1.530
