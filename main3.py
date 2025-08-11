@@ -12,7 +12,7 @@ class RobotArmCalculator:
     def __init__(self, root):
         self.root = root
         self.root.title("6DOF Robotic Arm Torque and Power Calculator")
-        self.root.geometry("1200x900")
+        self.root.geometry("1400x1000")
         
         # Global constants
         self.g = 9.80665  # Gravitational acceleration
@@ -24,8 +24,9 @@ class RobotArmCalculator:
         # Store results for table
         self.all_results = {}
         
-        # Store motor specs
-        self.motor_specs = {}
+        # Store motor specs (normal and with SF)
+        self.motor_specs_normal = {}
+        self.motor_specs_sf = {}
         
         # Create GUI
         self.create_gui()
@@ -44,70 +45,69 @@ class RobotArmCalculator:
         # Link density (shared)
         self.link_density = tk.StringVar(value="7850.0")  # Steel density kg/m³
         
-        # Link lengths (L1, L2, L3, L4, L5, L6)
-        self.link1_length = tk.StringVar(value="0.2")
-        self.link1_radius = tk.StringVar(value="0.04")
-        self.link2_length = tk.StringVar(value="0.3")
-        self.link2_radius = tk.StringVar(value="0.035")
-        self.link3_length = tk.StringVar(value="0.25")
-        self.link3_radius = tk.StringVar(value="0.03")
-        self.link4_length = tk.StringVar(value="0.25")
-        self.link4_radius = tk.StringVar(value="0.025")
-        self.link5_length = tk.StringVar(value="0.3")
-        self.link5_radius = tk.StringVar(value="0.025")
-        self.link6_length = tk.StringVar(value="0.2")
-        self.link6_radius = tk.StringVar(value="0.02")
+        # Link dimensions (L6, L5, L4, L3, L2, L1)
+        self.L6 = tk.StringVar(value="0.2")
+        self.L5 = tk.StringVar(value="0.3")
+        self.L4 = tk.StringVar(value="0.25")
+        self.L3 = tk.StringVar(value="0.25")
+        self.L2 = tk.StringVar(value="0.3")
+        self.L1 = tk.StringVar(value="0.0")  # Base link, can be 0
         
-        # Motor pivot positions (M1, M2, M3, M4, M5, M6)
-        self.motor1_pivot = tk.StringVar(value="0.0")   # Base motor
-        self.motor2_pivot = tk.StringVar(value="0.2")   # After link 1
-        self.motor3_pivot = tk.StringVar(value="0.5")   # After link 1 + link 2
-        self.motor4_pivot = tk.StringVar(value="0.75")  # After link 1 + link 2 + link 3
-        self.motor5_pivot = tk.StringVar(value="1.0")   # After link 1 + link 2 + link 3 + link 4
-        self.motor6_pivot = tk.StringVar(value="1.3")   # After link 1 + link 2 + link 3 + link 4 + link 5
+        # Link radii
+        self.r6 = tk.StringVar(value="0.02")
+        self.r5 = tk.StringVar(value="0.025")
+        self.r4 = tk.StringVar(value="0.025")
+        self.r3 = tk.StringVar(value="0.03")
+        self.r2 = tk.StringVar(value="0.035")
+        self.r1 = tk.StringVar(value="0.04")
         
-        # Motor body lengths (a1, a2, a3, a4, a5, a6)
-        self.motor1_length = tk.StringVar(value="0.15")
-        self.motor2_length = tk.StringVar(value="0.12")
-        self.motor3_length = tk.StringVar(value="0.15")
-        self.motor4_length = tk.StringVar(value="0.12")
-        self.motor5_length = tk.StringVar(value="0.12")
-        self.motor6_length = tk.StringVar(value="0.1")
+        # Motor masses (will be updated from motor specs)
+        self.m_motor6 = tk.StringVar(value="1.0")
+        self.m_motor5 = tk.StringVar(value="1.2")
+        self.m_motor4 = tk.StringVar(value="1.2")
+        self.m_motor3 = tk.StringVar(value="1.5")
+        self.m_motor2 = tk.StringVar(value="2.0")
+        self.m_motor1 = tk.StringVar(value="2.5")
         
-        # Motor parameters for each motor
-        self.motor1_rpm = tk.StringVar(value="3000")
-        self.reduction_ratio_m1 = tk.StringVar(value="50")
-        self.safety_factor_m1 = tk.StringVar(value="1.5")
+        # Motor body lengths
+        self.a6 = tk.StringVar(value="0.1")
+        self.a5 = tk.StringVar(value="0.12")
+        self.a4 = tk.StringVar(value="0.12")
+        self.a3 = tk.StringVar(value="0.15")
+        self.a2 = tk.StringVar(value="0.18")
+        self.a1 = tk.StringVar(value="0.2")
         
-        self.motor2_rpm = tk.StringVar(value="3000")
-        self.reduction_ratio_m2 = tk.StringVar(value="50")
-        self.safety_factor_m2 = tk.StringVar(value="1.5")
+        # Motor pivot positions from base
+        self.M6 = tk.StringVar(value="1.25")  # L1+L2+L3+L4+L5
+        self.M5 = tk.StringVar(value="1.0")   # L1+L2+L3+L4
+        self.M4 = tk.StringVar(value="0.75")  # L1+L2+L3
+        self.M3 = tk.StringVar(value="0.5")   # L1+L2
+        self.M2 = tk.StringVar(value="0.25")  # L1
+        self.M1 = tk.StringVar(value="0.0")   # Base
         
-        self.motor3_rpm = tk.StringVar(value="3000")
-        self.reduction_ratio_m3 = tk.StringVar(value="50")
-        self.safety_factor_m3 = tk.StringVar(value="1.5")
+        # Motor RPM values
+        self.rpm6 = tk.StringVar(value="3000")
+        self.rpm5 = tk.StringVar(value="3000")
+        self.rpm4 = tk.StringVar(value="3000")
+        self.rpm3 = tk.StringVar(value="3000")
+        self.rpm2 = tk.StringVar(value="3000")
+        self.rpm1 = tk.StringVar(value="3000")
         
-        self.motor4_rpm = tk.StringVar(value="3000")
-        self.reduction_ratio_m4 = tk.StringVar(value="50")
-        self.safety_factor_m4 = tk.StringVar(value="1.5")
+        # Gear reduction ratios
+        self.R6 = tk.StringVar(value="50")
+        self.R5 = tk.StringVar(value="50")
+        self.R4 = tk.StringVar(value="50")
+        self.R3 = tk.StringVar(value="50")
+        self.R2 = tk.StringVar(value="50")
+        self.R1 = tk.StringVar(value="50")
         
-        self.motor5_rpm = tk.StringVar(value="3000")
-        self.reduction_ratio_m5 = tk.StringVar(value="50")
-        self.safety_factor_m5 = tk.StringVar(value="1.5")
-        
-        self.motor6_rpm = tk.StringVar(value="3000")
-        self.reduction_ratio_m6 = tk.StringVar(value="50")
-        self.safety_factor_m6 = tk.StringVar(value="1.5")
-        
-        # Link lengths for diagram
-        self.link_lengths = [
-            self.link1_length,
-            self.link2_length,
-            self.link3_length,
-            self.link4_length,
-            self.link5_length,
-            self.link6_length
-        ]
+        # Safety factors
+        self.SF6 = tk.StringVar(value="1.5")
+        self.SF5 = tk.StringVar(value="1.5")
+        self.SF4 = tk.StringVar(value="1.5")
+        self.SF3 = tk.StringVar(value="1.5")
+        self.SF2 = tk.StringVar(value="1.5")
+        self.SF1 = tk.StringVar(value="1.5")
     
     def create_gui(self):
         """Create the GUI layout"""
@@ -148,7 +148,7 @@ class RobotArmCalculator:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Global parameters
+        # Global Parameters
         global_frame = ttk.LabelFrame(scrollable_frame, text="Global Parameters", padding=10)
         global_frame.pack(fill="x", pady=5)
         
@@ -158,107 +158,57 @@ class RobotArmCalculator:
         ttk.Label(global_frame, text="Link Density (kg/m³):").grid(row=0, column=2, sticky="w", padx=5)
         ttk.Entry(global_frame, textvariable=self.link_density, width=15).grid(row=0, column=3, padx=5)
         
-        # Link parameters
-        links_frame = ttk.LabelFrame(scrollable_frame, text="Link Parameters", padding=10)
-        links_frame.pack(fill="x", pady=5)
+        # Link Dimensions
+        link_frame = ttk.LabelFrame(scrollable_frame, text="Link Dimensions", padding=10)
+        link_frame.pack(fill="x", pady=5)
         
-        link_params = [
-            ("Link 1", self.link1_length, self.link1_radius),
-            ("Link 2", self.link2_length, self.link2_radius),
-            ("Link 3", self.link3_length, self.link3_radius),
-            ("Link 4", self.link4_length, self.link4_radius),
-            ("Link 5", self.link5_length, self.link5_radius),
-            ("Link 6", self.link6_length, self.link6_radius),
+        links = [
+            ("L6 (m):", self.L6, "r6 (m):", self.r6),
+            ("L5 (m):", self.L5, "r5 (m):", self.r5),
+            ("L4 (m):", self.L4, "r4 (m):", self.r4),
+            ("L3 (m):", self.L3, "r3 (m):", self.r3),
+            ("L2 (m):", self.L2, "r2 (m):", self.r2),
+            ("L1 (m):", self.L1, "r1 (m):", self.r1)
         ]
         
-        for i, (label, length_var, radius_var) in enumerate(link_params):
-            row = i // 3
-            col = (i % 3) * 4
-            ttk.Label(links_frame, text=f"{label} Length (m):").grid(row=row, column=col, sticky="w", padx=5, pady=2)
-            ttk.Entry(links_frame, textvariable=length_var, width=15).grid(row=row, column=col+1, padx=5, pady=2)
-            ttk.Label(links_frame, text=f"{label} Radius (m):").grid(row=row, column=col+2, sticky="w", padx=5, pady=2)
-            ttk.Entry(links_frame, textvariable=radius_var, width=15).grid(row=row, column=col+3, padx=5, pady=2)
+        for i, (l_label, l_var, r_label, r_var) in enumerate(links):
+            row = i // 2
+            col = (i % 2) * 4
+            ttk.Label(link_frame, text=l_label).grid(row=row, column=col, sticky="w", padx=5, pady=2)
+            ttk.Entry(link_frame, textvariable=l_var, width=12).grid(row=row, column=col+1, padx=5, pady=2)
+            ttk.Label(link_frame, text=r_label).grid(row=row, column=col+2, sticky="w", padx=5, pady=2)
+            ttk.Entry(link_frame, textvariable=r_var, width=12).grid(row=row, column=col+3, padx=5, pady=2)
         
-        # Motor pivot positions
-        pivot_frame = ttk.LabelFrame(scrollable_frame, text="Motor Pivot Positions", padding=10)
-        pivot_frame.pack(fill="x", pady=5)
-        
-        pivot_vars = [
-            ("Motor 1 Pivot (m):", self.motor1_pivot),
-            ("Motor 2 Pivot (m):", self.motor2_pivot),
-            ("Motor 3 Pivot (m):", self.motor3_pivot),
-            ("Motor 4 Pivot (m):", self.motor4_pivot),
-            ("Motor 5 Pivot (m):", self.motor5_pivot),
-            ("Motor 6 Pivot (m):", self.motor6_pivot),
+        # Motor Parameters for each motor
+        motor_vars = [
+            (6, self.M6, self.a6, self.rpm6, self.R6, self.SF6),
+            (5, self.M5, self.a5, self.rpm5, self.R5, self.SF5),
+            (4, self.M4, self.a4, self.rpm4, self.R4, self.SF4),
+            (3, self.M3, self.a3, self.rpm3, self.R3, self.SF3),
+            (2, self.M2, self.a2, self.rpm2, self.R2, self.SF2),
+            (1, self.M1, self.a1, self.rpm1, self.R1, self.SF1)
         ]
         
-        for i, (label, var) in enumerate(pivot_vars):
-            row = i // 3
-            col = (i % 3) * 2
-            ttk.Label(pivot_frame, text=label).grid(row=row, column=col, sticky="w", padx=5, pady=2)
-            ttk.Entry(pivot_frame, textvariable=var, width=15).grid(row=row, column=col+1, padx=5, pady=2)
-        
-        # Motor parameters
-        for motor_num in range(1, 7):
-            motor_frame = ttk.LabelFrame(scrollable_frame, text=f"Motor {motor_num} Parameters", padding=10)
-            motor_frame.pack(fill="x", pady=5)
-            self.create_motor_inputs(motor_frame, motor_num)
-    
-    def create_motor_inputs(self, parent, motor_num):
-        """Create input fields for a motor"""
-        # Get the appropriate variables for this motor
-        motor_vars = {
-            1: {
-                "Motor Body Length (m)": self.motor1_length,
-                "Motor RPM": self.motor1_rpm,
-                "Reduction Ratio": self.reduction_ratio_m1,
-                "Safety Factor": self.safety_factor_m1
-            },
-            2: {
-                "Motor Body Length (m)": self.motor2_length,
-                "Motor RPM": self.motor2_rpm,
-                "Reduction Ratio": self.reduction_ratio_m2,
-                "Safety Factor": self.safety_factor_m2
-            },
-            3: {
-                "Motor Body Length (m)": self.motor3_length,
-                "Motor RPM": self.motor3_rpm,
-                "Reduction Ratio": self.reduction_ratio_m3,
-                "Safety Factor": self.safety_factor_m3
-            },
-            4: {
-                "Motor Body Length (m)": self.motor4_length,
-                "Motor RPM": self.motor4_rpm,
-                "Reduction Ratio": self.reduction_ratio_m4,
-                "Safety Factor": self.safety_factor_m4
-            },
-            5: {
-                "Motor Body Length (m)": self.motor5_length,
-                "Motor RPM": self.motor5_rpm,
-                "Reduction Ratio": self.reduction_ratio_m5,
-                "Safety Factor": self.safety_factor_m5
-            },
-            6: {
-                "Motor Body Length (m)": self.motor6_length,
-                "Motor RPM": self.motor6_rpm,
-                "Reduction Ratio": self.reduction_ratio_m6,
-                "Safety Factor": self.safety_factor_m6
-            }
-        }
-        
-        params = motor_vars[motor_num]
-        row = 0
-        col = 0
-        for label, var in params.items():
-            ttk.Label(parent, text=f"{label}:").grid(row=row, column=col, sticky="w", padx=5, pady=2)
-            ttk.Entry(parent, textvariable=var, width=15).grid(row=row, column=col+1, padx=5, pady=2)
-            col += 2
-            if col >= 6:
-                col = 0
-                row += 1
+        for motor_num, M_var, a_var, rpm_var, R_var, SF_var in motor_vars:
+            frame = ttk.LabelFrame(scrollable_frame, text=f"Motor {motor_num} Parameters", padding=10)
+            frame.pack(fill="x", pady=5)
+            
+            params = [
+                ("Pivot Position M (m):", M_var),
+                ("Body Length a (m):", a_var),
+                ("RPM:", rpm_var),
+                ("Reduction Ratio R:", R_var),
+                ("Safety Factor SF:", SF_var)
+            ]
+            
+            for i, (label, var) in enumerate(params):
+                row = i // 3
+                col = (i % 3) * 2
+                ttk.Label(frame, text=label).grid(row=row, column=col, sticky="w", padx=5, pady=2)
+                ttk.Entry(frame, textvariable=var, width=15).grid(row=row, column=col+1, padx=5, pady=2)
     
     def create_results_tab(self, parent):
-        """Create results display tab"""
+        """Create results display tab with scrollbar"""
         canvas = tk.Canvas(parent)
         scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
@@ -282,12 +232,28 @@ class RobotArmCalculator:
             self.create_result_labels(frame, motor_num)
     
     def create_table_tab(self, parent):
-        """Create table tab with three tables"""
-        frame = ttk.Frame(parent, padding=10)
-        frame.pack(fill="both", expand=True)
+        """Create table tab with scrollable tables"""
+        # Create main frame with scrollbar
+        canvas = tk.Canvas(parent)
+        scrollbar_y = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollbar_x = ttk.Scrollbar(parent, orient="horizontal", command=canvas.xview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+        
+        # Pack scrollbars and canvas
+        scrollbar_y.pack(side="right", fill="y")
+        scrollbar_x.pack(side="bottom", fill="x")
+        canvas.pack(side="left", fill="both", expand=True)
         
         # Torque and Power Results Table
-        old_table_frame = ttk.LabelFrame(frame, text="Torque and Power Results", padding=10)
+        old_table_frame = ttk.LabelFrame(scrollable_frame, text="Torque and Power Results", padding=10)
         old_table_frame.pack(fill="x", pady=5)
         
         old_columns = (
@@ -299,16 +265,30 @@ class RobotArmCalculator:
             "Power (W)",
             "Power with SF (W)"
         )
-        self.old_tree = ttk.Treeview(old_table_frame, columns=old_columns, show="headings")
+        
+        # Create frame for old table with scrollbars
+        old_tree_frame = ttk.Frame(old_table_frame)
+        old_tree_frame.pack(fill="both", expand=True)
+        
+        self.old_tree = ttk.Treeview(old_tree_frame, columns=old_columns, show="headings", height=8)
+        old_tree_scroll_y = ttk.Scrollbar(old_tree_frame, orient="vertical", command=self.old_tree.yview)
+        old_tree_scroll_x = ttk.Scrollbar(old_tree_frame, orient="horizontal", command=self.old_tree.xview)
+        
+        self.old_tree.configure(yscrollcommand=old_tree_scroll_y.set, xscrollcommand=old_tree_scroll_x.set)
         
         for col in old_columns:
             self.old_tree.heading(col, text=col)
-            self.old_tree.column(col, width=150, anchor="center")
+            self.old_tree.column(col, width=180, anchor="center")
         
-        self.old_tree.pack(fill="x", pady=5)
+        # Pack old table components
+        self.old_tree.grid(row=0, column=0, sticky="nsew")
+        old_tree_scroll_y.grid(row=0, column=1, sticky="ns")
+        old_tree_scroll_x.grid(row=1, column=0, sticky="ew")
+        old_tree_frame.grid_rowconfigure(0, weight=1)
+        old_tree_frame.grid_columnconfigure(0, weight=1)
         
-        # Motor Specifications Table (Normal Torque and Power)
-        new_table_frame = ttk.LabelFrame(frame, text="Motor Specifications", padding=10)
+        # Motor Specifications Table (Normal)
+        new_table_frame = ttk.LabelFrame(scrollable_frame, text="Motor Specifications (Normal)", padding=10)
         new_table_frame.pack(fill="x", pady=5)
         
         new_columns = (
@@ -321,42 +301,59 @@ class RobotArmCalculator:
             "Price ($)",
             "Motor Weight (kg)"
         )
-        self.new_tree = ttk.Treeview(new_table_frame, columns=new_columns, show="headings")
+        
+        # Create frame for new table with scrollbars
+        new_tree_frame = ttk.Frame(new_table_frame)
+        new_tree_frame.pack(fill="both", expand=True)
+        
+        self.new_tree = ttk.Treeview(new_tree_frame, columns=new_columns, show="headings", height=8)
+        new_tree_scroll_y = ttk.Scrollbar(new_tree_frame, orient="vertical", command=self.new_tree.yview)
+        new_tree_scroll_x = ttk.Scrollbar(new_tree_frame, orient="horizontal", command=self.new_tree.xview)
+        
+        self.new_tree.configure(yscrollcommand=new_tree_scroll_y.set, xscrollcommand=new_tree_scroll_x.set)
         
         for col in new_columns:
             self.new_tree.heading(col, text=col)
             self.new_tree.column(col, width=150, anchor="center")
         
-        self.new_tree.pack(fill="x", pady=5)
+        # Pack new table components
+        self.new_tree.grid(row=0, column=0, sticky="nsew")
+        new_tree_scroll_y.grid(row=0, column=1, sticky="ns")
+        new_tree_scroll_x.grid(row=1, column=0, sticky="ew")
+        new_tree_frame.grid_rowconfigure(0, weight=1)
+        new_tree_frame.grid_columnconfigure(0, weight=1)
         
         # Motor Specifications with Safety Factor Table
-        sf_table_frame = ttk.LabelFrame(frame, text="Motor Specifications with Safety Factor", padding=10)
+        sf_table_frame = ttk.LabelFrame(scrollable_frame, text="Motor Specifications with Safety Factor", padding=10)
         sf_table_frame.pack(fill="x", pady=5)
         
-        sf_columns = (
-            "Motor",
-            "Power Rating (W)",
-            "Flange Size (mm)",
-            "Voltage Type",
-            "Model Name",
-            "Company Name",
-            "Price ($)",
-            "Motor Weight (kg)"
-        )
-        self.sf_tree = ttk.Treeview(sf_table_frame, columns=sf_columns, show="headings")
+        # Create frame for SF table with scrollbars
+        sf_tree_frame = ttk.Frame(sf_table_frame)
+        sf_tree_frame.pack(fill="both", expand=True)
         
-        for col in sf_columns:
+        self.sf_tree = ttk.Treeview(sf_tree_frame, columns=new_columns, show="headings", height=8)
+        sf_tree_scroll_y = ttk.Scrollbar(sf_tree_frame, orient="vertical", command=self.sf_tree.yview)
+        sf_tree_scroll_x = ttk.Scrollbar(sf_tree_frame, orient="horizontal", command=self.sf_tree.xview)
+        
+        self.sf_tree.configure(yscrollcommand=sf_tree_scroll_y.set, xscrollcommand=sf_tree_scroll_x.set)
+        
+        for col in new_columns:
             self.sf_tree.heading(col, text=col)
             self.sf_tree.column(col, width=150, anchor="center")
         
-        self.sf_tree.pack(fill="x", pady=5)
+        # Pack SF table components
+        self.sf_tree.grid(row=0, column=0, sticky="nsew")
+        sf_tree_scroll_y.grid(row=0, column=1, sticky="ns")
+        sf_tree_scroll_x.grid(row=1, column=0, sticky="ew")
+        sf_tree_frame.grid_rowconfigure(0, weight=1)
+        sf_tree_frame.grid_columnconfigure(0, weight=1)
     
     def create_diagram_tab(self, parent):
         """Create diagram tab with arm plot"""
         frame = ttk.Frame(parent, padding=10)
         frame.pack(fill="both", expand=True)
         
-        self.fig, self.ax = plt.subplots(figsize=(5, 5))
+        self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.canvas = FigureCanvasTkAgg(self.fig, master=frame)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
         
@@ -367,7 +364,7 @@ class RobotArmCalculator:
         results = [
             "Motor",
             "Power Rating (W)",
-            "Flange Size (mm)",
+            "Flange Size (mm)", 
             "Voltage Type",
             "Model Name",
             "Company Name",
@@ -382,28 +379,24 @@ class RobotArmCalculator:
         ]
         
         for i, result in enumerate(results):
-            ttk.Label(parent, text=f"{result}:").grid(row=i//2, column=(i%2)*2, sticky="w", padx=5, pady=2)
-            label = ttk.Label(parent, text="N/A", background="white", relief="sunken")
-            label.grid(row=i//2, column=(i%2)*2+1, sticky="w", padx=5, pady=2)
+            row = i // 2
+            col = (i % 2) * 2
+            ttk.Label(parent, text=f"{result}:").grid(row=row, column=col, sticky="w", padx=5, pady=2)
+            label = ttk.Label(parent, text="N/A", background="white", relief="sunken", width=20)
+            label.grid(row=row, column=col+1, sticky="w", padx=5, pady=2)
             setattr(self, f"result_m{motor_num}_{i}", label)
     
     def bind_events(self):
         """Bind events for real-time calculation"""
         variables = [
             self.payload_mass, self.link_density,
-            self.link1_length, self.link1_radius, self.link2_length, self.link2_radius,
-            self.link3_length, self.link3_radius, self.link4_length, self.link4_radius,
-            self.link5_length, self.link5_radius, self.link6_length, self.link6_radius,
-            self.motor1_pivot, self.motor2_pivot, self.motor3_pivot, self.motor4_pivot,
-            self.motor5_pivot, self.motor6_pivot,
-            self.motor1_length, self.motor2_length, self.motor3_length,
-            self.motor4_length, self.motor5_length, self.motor6_length,
-            self.motor1_rpm, self.reduction_ratio_m1, self.safety_factor_m1,
-            self.motor2_rpm, self.reduction_ratio_m2, self.safety_factor_m2,
-            self.motor3_rpm, self.reduction_ratio_m3, self.safety_factor_m3,
-            self.motor4_rpm, self.reduction_ratio_m4, self.safety_factor_m4,
-            self.motor5_rpm, self.reduction_ratio_m5, self.safety_factor_m5,
-            self.motor6_rpm, self.reduction_ratio_m6, self.safety_factor_m6
+            self.L6, self.L5, self.L4, self.L3, self.L2, self.L1,
+            self.r6, self.r5, self.r4, self.r3, self.r2, self.r1,
+            self.M6, self.M5, self.M4, self.M3, self.M2, self.M1,
+            self.a6, self.a5, self.a4, self.a3, self.a2, self.a1,
+            self.rpm6, self.rpm5, self.rpm4, self.rpm3, self.rpm2, self.rpm1,
+            self.R6, self.R5, self.R4, self.R3, self.R2, self.R1,
+            self.SF6, self.SF5, self.SF4, self.SF3, self.SF2, self.SF1
         ]
         
         for var in variables:
@@ -416,90 +409,72 @@ class RobotArmCalculator:
     def get_float_value(self, var, default=0.0):
         """Safely get float value from StringVar"""
         try:
-            return float(var.get())
+            value = float(var.get())
+            return value if value >= 0 else default
         except (ValueError, tk.TclError):
             return default
     
     def get_int_value(self, var, default=0):
         """Safely get int value from StringVar"""
         try:
-            return int(var.get())
+            value = int(var.get())
+            return value if value >= 0 else default
         except (ValueError, tk.TclError):
             return default
-    
-    def get_joint_positions(self):
-        """Calculate joint positions S1, S2, S3, S4, S5, S6"""
-        L1 = self.get_float_value(self.link1_length)
-        L2 = self.get_float_value(self.link2_length)
-        L3 = self.get_float_value(self.link3_length)
-        L4 = self.get_float_value(self.link4_length)
-        L5 = self.get_float_value(self.link5_length)
-        L6 = self.get_float_value(self.link6_length)
-        
-        S1 = L1
-        S2 = L1 + L2
-        S3 = L1 + L2 + L3
-        S4 = L1 + L2 + L3 + L4
-        S5 = L1 + L2 + L3 + L4 + L5
-        S6 = L1 + L2 + L3 + L4 + L5 + L6
-        
-        return S1, S2, S3, S4, S5, S6
-    
-    def get_link_weights(self):
-        """Calculate link weights"""
-        density = self.get_float_value(self.link_density)
-        
-        weights = {}
-        for i in range(1, 7):
-            length_var = getattr(self, f'link{i}_length')
-            radius_var = getattr(self, f'link{i}_radius')
-            length = self.get_float_value(length_var)
-            radius = self.get_float_value(radius_var)
-            weights[i] = self.g * density * self.PI * radius**2 * length
-        
-        return weights
-    
-    def get_motor_weights(self):
-        """Get motor weights from motor specs"""
-        weights = {}
-        for i in range(1, 7):
-            if i in self.motor_specs:
-                weights[i] = self.g * self.motor_specs[i].get('motor_weight', 0.0)
-            else:
-                weights[i] = 0.0
-        return weights
     
     def update_diagram(self):
         """Update the arm diagram"""
         try:
             self.ax.clear()
+            
+            # Get link lengths
+            L1 = self.get_float_value(self.L1)
+            L2 = self.get_float_value(self.L2, 0.1)
+            L3 = self.get_float_value(self.L3, 0.1)
+            L4 = self.get_float_value(self.L4, 0.1)
+            L5 = self.get_float_value(self.L5, 0.1)
+            L6 = self.get_float_value(self.L6, 0.1)
+            
+            # Create arm configuration
             x = [0.0]
             y = [0.0]
             
-            # Draw links based on joint positions
-            S1, S2, S3, S4, S5, S6 = self.get_joint_positions()
+            # Link 1 (if exists)
+            if L1 > 0:
+                x.append(x[-1])
+                y.append(y[-1] + L1)
             
-            # Vertical link 1
+            # Link 2 (vertical)
             x.append(x[-1])
-            y.append(y[-1] + self.get_float_value(self.link1_length, 0.1))
+            y.append(y[-1] + L2)
             
-            # Horizontal links 2-6
-            for length_var in [self.link2_length, self.link3_length, self.link4_length, self.link5_length, self.link6_length]:
-                length = max(self.get_float_value(length_var, 0.1), 0.1)
-                x.append(x[-1] + length)
+            # Links 3-6 (horizontal)
+            for L in [L3, L4, L5, L6]:
+                x.append(x[-1] + L)
                 y.append(y[-1])
             
-            self.ax.plot(x, y, marker="o", linestyle="-", color="blue", linewidth=2, markersize=6)
+            # Plot the arm
+            self.ax.plot(x, y, marker="o", linestyle="-", color="blue", linewidth=3, markersize=8)
             
+            # Add joint labels
             for i, (xi, yi) in enumerate(zip(x, y)):
-                self.ax.text(xi, yi + 0.07, f"J{i+1}", fontsize=7, ha="center")
+                if i < len(x) - 1:  # Don't label the end effector
+                    self.ax.text(xi, yi + 0.05, f"J{i+1}", fontsize=10, ha="center", weight="bold")
             
-            total_horizontal_length = sum(max(self.get_float_value(l, 0.1), 0.1) for l in self.link_lengths[1:])
-            vertical_length = max(self.get_float_value(self.link1_length, 0.1), 0.1)
-            self.ax.set_xlim(-0.3, total_horizontal_length + 0.3)
-            self.ax.set_ylim(-0.3, vertical_length + 0.3)
-            self.ax.set_title("6 DOF Arm", fontsize=9, pad=5)
+            # Add payload at end
+            self.ax.plot(x[-1], y[-1], marker="s", color="red", markersize=12, label="Payload")
+            
+            # Set limits and labels
+            total_x = sum([L3, L4, L5, L6])
+            total_y = L1 + L2
+            margin = 0.2
+            self.ax.set_xlim(-margin, total_x + margin)
+            self.ax.set_ylim(-margin, total_y + margin)
+            self.ax.set_title("6DOF Robotic Arm Configuration", fontsize=12, weight="bold")
             self.ax.grid(True, linestyle="--", alpha=0.7)
+            self.ax.set_xlabel("X (m)")
+            self.ax.set_ylabel("Y (m)")
+            self.ax.legend()
             self.ax.axis("equal")
             
             self.canvas.draw()
@@ -507,375 +482,165 @@ class RobotArmCalculator:
         except Exception as e:
             print(f"Error updating diagram: {e}")
     
-    def calculate_motor6_torque_and_power(self):
-        """Calculate Motor 6 torque and power requirements"""
+    def calculate_motor_torque_power(self, motor_num, with_sf=False):
+        """Calculate torque and power for a specific motor using new formulas"""
         try:
-            # Get parameters
-            payload_mass = self.get_float_value(self.payload_mass)
-            link_density = self.get_float_value(self.link_density)
-            L6 = self.get_float_value(self.link6_length)
-            r6 = self.get_float_value(self.link6_radius)
-            M6 = self.get_float_value(self.motor6_pivot)
-            rpm6 = self.get_int_value(self.motor6_rpm)
-            R6 = self.get_int_value(self.reduction_ratio_m6)
-            SF6 = self.get_float_value(self.safety_factor_m6)
+            # Get all parameter values
+            m_payload = self.get_float_value(self.payload_mass)
+            density = self.get_float_value(self.link_density)
             
-            # Get joint positions
-            S1, S2, S3, S4, S5, S6 = self.get_joint_positions()
+            # Link dimensions
+            L1 = self.get_float_value(self.L1)
+            L2 = self.get_float_value(self.L2)
+            L3 = self.get_float_value(self.L3)
+            L4 = self.get_float_value(self.L4)
+            L5 = self.get_float_value(self.L5)
+            L6 = self.get_float_value(self.L6)
             
-            # Calculate weights
-            W_P = self.g * payload_mass
-            W_L6 = self.g * link_density * self.PI * r6**2 * L6
+            r1 = self.get_float_value(self.r1)
+            r2 = self.get_float_value(self.r2)
+            r3 = self.get_float_value(self.r3)
+            r4 = self.get_float_value(self.r4)
+            r5 = self.get_float_value(self.r5)
+            r6 = self.get_float_value(self.r6)
             
-            # Calculate torques (following pseudocode exactly)
-            T6_payload = W_P * (S6 - M6)
-            T6_L6 = W_L6 * (S6 - M6 - L6/2)
-            T6_total = T6_payload + T6_L6
-            
-            T6_sf = SF6 * T6_total
-            T6_before = T6_total / R6 if R6 != 0 else 0
-            T6_before_sf = SF6 * T6_before
-            P6 = (T6_before * rpm6 * 1000 / 9550) if rpm6 != 0 else 0
-            P6_sf = SF6 * P6
-            
-            self.motor_specs[6] = get_motor_specs(6, T6_sf, P6_sf)
-            
-            return {
-                'total_torque': T6_total,
-                'total_torque_sf': T6_sf,
-                'torque_before_reduction': T6_before,
-                'torque_before_reduction_sf': T6_before_sf,
-                'power': P6,
-                'power_sf': P6_sf
+            # Motor parameters
+            motors_data = {
+                1: (self.M1, self.a1, self.rpm1, self.R1, self.SF1),
+                2: (self.M2, self.a2, self.rpm2, self.R2, self.SF2),
+                3: (self.M3, self.a3, self.rpm3, self.R3, self.SF3),
+                4: (self.M4, self.a4, self.rpm4, self.R4, self.SF4),
+                5: (self.M5, self.a5, self.rpm5, self.R5, self.SF5),
+                6: (self.M6, self.a6, self.rpm6, self.R6, self.SF6)
             }
             
-        except Exception as e:
-            print(f"Error in Motor 6 calculation: {e}")
-            return self.get_zero_results()
-    
-    def calculate_motor5_torque_and_power(self):
-        """Calculate Motor 5 torque and power requirements"""
-        try:
-            # Get parameters
-            payload_mass = self.get_float_value(self.payload_mass)
-            link_density = self.get_float_value(self.link_density)
-            L6 = self.get_float_value(self.link6_length)
-            r6 = self.get_float_value(self.link6_radius)
-            L5 = self.get_float_value(self.link5_length)
-            r5 = self.get_float_value(self.link5_radius)
-            M5 = self.get_float_value(self.motor5_pivot)
-            M6 = self.get_float_value(self.motor6_pivot)
-            a6 = self.get_float_value(self.motor6_length)
-            rpm5 = self.get_int_value(self.motor5_rpm)
-            R5 = self.get_int_value(self.reduction_ratio_m5)
-            SF5 = self.get_float_value(self.safety_factor_m5)
+            M_var, a_var, rpm_var, R_var, SF_var = motors_data[motor_num]
+            M = self.get_float_value(M_var)
+            a = self.get_float_value(a_var)
+            rpm = self.get_int_value(rpm_var)
+            R = self.get_int_value(R_var)
+            SF = self.get_float_value(SF_var)
             
-            # Get joint positions
-            S1, S2, S3, S4, S5, S6 = self.get_joint_positions()
+            # Calculate joint positions from base
+            S1 = L1
+            S2 = L1 + L2
+            S3 = L1 + L2 + L3
+            S4 = L1 + L2 + L3 + L4
+            S5 = L1 + L2 + L3 + L4 + L5
+            S6 = L1 + L2 + L3 + L4 + L5 + L6
             
-            # Calculate weights
-            W_P = self.g * payload_mass
-            W_L6 = self.g * link_density * self.PI * r6**2 * L6
-            W_L5 = self.g * link_density * self.PI * r5**2 * L5
-            m_motor6 = self.motor_specs.get(6, {'motor_weight': 0.0})['motor_weight']
-            W_M6 = self.g * m_motor6
+            # Calculate link weights
+            W_L1 = self.g * density * self.PI * r1**2 * L1 if L1 > 0 else 0
+            W_L2 = self.g * density * self.PI * r2**2 * L2
+            W_L3 = self.g * density * self.PI * r3**2 * L3
+            W_L4 = self.g * density * self.PI * r4**2 * L4
+            W_L5 = self.g * density * self.PI * r5**2 * L5
+            W_L6 = self.g * density * self.PI * r6**2 * L6
             
-            # Calculate torques (following pseudocode exactly)
-            T5_payload = W_P * (S6 - M5)
-            T5_L6 = W_L6 * (S6 - M5 - L6/2)
-            T5_M6 = W_M6 * ((M6 + a6/2) - M5)
-            T5_L5 = W_L5 * (S5 - M5 - L5/2)
-            T5_total = T5_payload + T5_L6 + T5_M6 + T5_L5
+            # Get motor weights from specs (use existing if available, otherwise use defaults)
+            m_motor1 = self.motor_specs_normal.get(1, {'motor_weight': 2.5})['motor_weight'] if not with_sf else self.motor_specs_sf.get(1, {'motor_weight': 2.5})['motor_weight']
+            m_motor2 = self.motor_specs_normal.get(2, {'motor_weight': 2.0})['motor_weight'] if not with_sf else self.motor_specs_sf.get(2, {'motor_weight': 2.0})['motor_weight']
+            m_motor3 = self.motor_specs_normal.get(3, {'motor_weight': 1.5})['motor_weight'] if not with_sf else self.motor_specs_sf.get(3, {'motor_weight': 1.5})['motor_weight']
+            m_motor4 = self.motor_specs_normal.get(4, {'motor_weight': 1.2})['motor_weight'] if not with_sf else self.motor_specs_sf.get(4, {'motor_weight': 1.2})['motor_weight']
+            m_motor5 = self.motor_specs_normal.get(5, {'motor_weight': 1.2})['motor_weight'] if not with_sf else self.motor_specs_sf.get(5, {'motor_weight': 1.2})['motor_weight']
+            m_motor6 = self.motor_specs_normal.get(6, {'motor_weight': 1.0})['motor_weight'] if not with_sf else self.motor_specs_sf.get(6, {'motor_weight': 1.0})['motor_weight']
             
-            T5_sf = SF5 * T5_total
-            T5_before = T5_total / R5 if R5 != 0 else 0
-            T5_before_sf = SF5 * T5_before
-            P5 = (T5_before * rpm5 * 1000 / 9550) if rpm5 != 0 else 0
-            P5_sf = SF5 * P5
-            
-            self.motor_specs[5] = get_motor_specs(5, T5_sf, P5_sf)
-            
-            return {
-                'total_torque': T5_total,
-                'total_torque_sf': T5_sf,
-                'torque_before_reduction': T5_before,
-                'torque_before_reduction_sf': T5_before_sf,
-                'power': P5,
-                'power_sf': P5_sf
-            }
-            
-        except Exception as e:
-            print(f"Error in Motor 5 calculation: {e}")
-            return self.get_zero_results()
-    
-    def calculate_motor4_torque_and_power(self):
-        """Calculate Motor 4 torque and power requirements"""
-        try:
-            # Get parameters
-            payload_mass = self.get_float_value(self.payload_mass)
-            link_density = self.get_float_value(self.link_density)
-            L6 = self.get_float_value(self.link6_length)
-            r6 = self.get_float_value(self.link6_radius)
-            L5 = self.get_float_value(self.link5_length)
-            r5 = self.get_float_value(self.link5_radius)
-            L4 = self.get_float_value(self.link4_length)
-            r4 = self.get_float_value(self.link4_radius)
-            M4 = self.get_float_value(self.motor4_pivot)
-            M5 = self.get_float_value(self.motor5_pivot)
-            M6 = self.get_float_value(self.motor6_pivot)
-            a5 = self.get_float_value(self.motor5_length)
-            a6 = self.get_float_value(self.motor6_length)
-            rpm4 = self.get_int_value(self.motor4_rpm)
-            R4 = self.get_int_value(self.reduction_ratio_m4)
-            SF4 = self.get_float_value(self.safety_factor_m4)
-            
-            # Get joint positions
-            S1, S2, S3, S4, S5, S6 = self.get_joint_positions()
-            
-            # Calculate weights
-            W_P = self.g * payload_mass
-            W_L6 = self.g * link_density * self.PI * r6**2 * L6
-            W_L5 = self.g * link_density * self.PI * r5**2 * L5
-            W_L4 = self.g * link_density * self.PI * r4**2 * L4
-            m_motor6 = self.motor_specs.get(6, {'motor_weight': 0.0})['motor_weight']
-            m_motor5 = self.motor_specs.get(5, {'motor_weight': 0.0})['motor_weight']
-            W_M6 = self.g * m_motor6
-            W_M5 = self.g * m_motor5
-            
-            # Calculate torques (following pseudocode exactly)
-            T4_payload = W_P * (S6 - M4)
-            T4_L6 = W_L6 * (S6 - M4 - L6/2)
-            T4_L5 = W_L5 * (S5 - M4 - L5/2)
-            T4_M6 = W_M6 * ((M6 + a6/2) - M4)
-            T4_M5 = W_M5 * ((M5 + a5/2) - M4)
-            T4_L4 = W_L4 * (S4 - M4 - L4/2)
-            T4_total = T4_payload + T4_L6 + T4_L5 + T4_M6 + T4_M5 + T4_L4
-            
-            T4_sf = SF4 * T4_total
-            T4_before = T4_total / R4 if R4 != 0 else 0
-            T4_before_sf = SF4 * T4_before
-            P4 = (T4_before * rpm4 * 1000 / 9550) if rpm4 != 0 else 0
-            P4_sf = SF4 * P4
-            
-            self.motor_specs[4] = get_motor_specs(4, T4_sf, P4_sf)
-            
-            return {
-                'total_torque': T4_total,
-                'total_torque_sf': T4_sf,
-                'torque_before_reduction': T4_before,
-                'torque_before_reduction_sf': T4_before_sf,
-                'power': P4,
-                'power_sf': P4_sf
-            }
-            
-        except Exception as e:
-            print(f"Error in Motor 4 calculation: {e}")
-            return self.get_zero_results()
-    
-    def calculate_motor3_torque_and_power(self):
-        """Calculate Motor 3 torque and power requirements"""
-        try:
-            # Get parameters
-            payload_mass = self.get_float_value(self.payload_mass)
-            link_density = self.get_float_value(self.link_density)
-            L6 = self.get_float_value(self.link6_length)
-            r6 = self.get_float_value(self.link6_radius)
-            L5 = self.get_float_value(self.link5_length)
-            r5 = self.get_float_value(self.link5_radius)
-            L4 = self.get_float_value(self.link4_length)
-            r4 = self.get_float_value(self.link4_radius)
-            L3 = self.get_float_value(self.link3_length)
-            r3 = self.get_float_value(self.link3_radius)
-            M3 = self.get_float_value(self.motor3_pivot)
-            M4 = self.get_float_value(self.motor4_pivot)
-            M5 = self.get_float_value(self.motor5_pivot)
-            M6 = self.get_float_value(self.motor6_pivot)
-            a4 = self.get_float_value(self.motor4_length)
-            a5 = self.get_float_value(self.motor5_length)
-            a6 = self.get_float_value(self.motor6_length)
-            rpm3 = self.get_int_value(self.motor3_rpm)
-            R3 = self.get_int_value(self.reduction_ratio_m3)
-            SF3 = self.get_float_value(self.safety_factor_m3)
-            
-            # Get joint positions
-            S1, S2, S3, S4, S5, S6 = self.get_joint_positions()
-            
-            # Calculate weights
-            W_P = self.g * payload_mass
-            W_L6 = self.g * link_density * self.PI * r6**2 * L6
-            W_L5 = self.g * link_density * self.PI * r5**2 * L5
-            W_L4 = self.g * link_density * self.PI * r4**2 * L4
-            W_L3 = self.g * link_density * self.PI * r3**2 * L3
-            m_motor6 = self.motor_specs.get(6, {'motor_weight': 0.0})['motor_weight']
-            m_motor5 = self.motor_specs.get(5, {'motor_weight': 0.0})['motor_weight']
-            m_motor4 = self.motor_specs.get(4, {'motor_weight': 0.0})['motor_weight']
-            W_M6 = self.g * m_motor6
-            W_M5 = self.g * m_motor5
-            W_M4 = self.g * m_motor4
-            
-            # Calculate torques (following pseudocode exactly)
-            T3_payload = W_P * (S6 - M3)
-            T3_L6 = W_L6 * (S6 - M3 - L6/2)
-            T3_L5 = W_L5 * (S5 - M3 - L5/2)
-            T3_L4 = W_L4 * (S4 - M3 - L4/2)
-            T3_M6 = W_M6 * ((M6 + a6/2) - M3)
-            T3_M5 = W_M5 * ((M5 + a5/2) - M3)
-            T3_M4 = W_M4 * ((M4 + a4/2) - M3)
-            T3_L3 = W_L3 * (S3 - M3 - L3/2)
-            T3_total = T3_payload + T3_L6 + T3_L5 + T3_L4 + T3_M6 + T3_M5 + T3_M4 + T3_L3
-            
-            T3_sf = SF3 * T3_total
-            T3_before = T3_total / R3 if R3 != 0 else 0
-            T3_before_sf = SF3 * T3_before
-            P3 = (T3_before * rpm3 * 1000 / 9550) if rpm3 != 0 else 0
-            P3_sf = SF3 * P3
-            
-            self.motor_specs[3] = get_motor_specs(3, T3_sf, P3_sf)
-            
-            return {
-                'total_torque': T3_total,
-                'total_torque_sf': T3_sf,
-                'torque_before_reduction': T3_before,
-                'torque_before_reduction_sf': T3_before_sf,
-                'power': P3,
-                'power_sf': P3_sf
-            }
-            
-        except Exception as e:
-            print(f"Error in Motor 3 calculation: {e}")
-            return self.get_zero_results()
-    
-    def calculate_motor2_torque_and_power(self):
-        """Calculate Motor 2 torque and power requirements"""
-        try:
-            # Get parameters
-            payload_mass = self.get_float_value(self.payload_mass)
-            link_density = self.get_float_value(self.link_density)
-            L6 = self.get_float_value(self.link6_length)
-            r6 = self.get_float_value(self.link6_radius)
-            L5 = self.get_float_value(self.link5_length)
-            r5 = self.get_float_value(self.link5_radius)
-            L4 = self.get_float_value(self.link4_length)
-            r4 = self.get_float_value(self.link4_radius)
-            L3 = self.get_float_value(self.link3_length)
-            r3 = self.get_float_value(self.link3_radius)
-            L2 = self.get_float_value(self.link2_length)
-            r2 = self.get_float_value(self.link2_radius)
-            M2 = self.get_float_value(self.motor2_pivot)
-            M3 = self.get_float_value(self.motor3_pivot)
-            M4 = self.get_float_value(self.motor4_pivot)
-            M5 = self.get_float_value(self.motor5_pivot)
-            M6 = self.get_float_value(self.motor6_pivot)
-            a3 = self.get_float_value(self.motor3_length)
-            a4 = self.get_float_value(self.motor4_length)
-            a5 = self.get_float_value(self.motor5_length)
-            a6 = self.get_float_value(self.motor6_length)
-            rpm2 = self.get_int_value(self.motor2_rpm)
-            R2 = self.get_int_value(self.reduction_ratio_m2)
-            SF2 = self.get_float_value(self.safety_factor_m2)
-            
-            # Get joint positions
-            S1, S2, S3, S4, S5, S6 = self.get_joint_positions()
-            
-            # Calculate weights
-            W_P = self.g * payload_mass
-            W_L6 = self.g * link_density * self.PI * r6**2 * L6
-            W_L5 = self.g * link_density * self.PI * r5**2 * L5
-            W_L4 = self.g * link_density * self.PI * r4**2 * L4
-            W_L3 = self.g * link_density * self.PI * r3**2 * L3
-            W_L2 = self.g * link_density * self.PI * r2**2 * L2
-            m_motor6 = self.motor_specs.get(6, {'motor_weight': 0.0})['motor_weight']
-            m_motor5 = self.motor_specs.get(5, {'motor_weight': 0.0})['motor_weight']
-            m_motor4 = self.motor_specs.get(4, {'motor_weight': 0.0})['motor_weight']
-            m_motor3 = self.motor_specs.get(3, {'motor_weight': 0.0})['motor_weight']
-            W_M6 = self.g * m_motor6
-            W_M5 = self.g * m_motor5
-            W_M4 = self.g * m_motor4
+            W_M1 = self.g * m_motor1
+            W_M2 = self.g * m_motor2
             W_M3 = self.g * m_motor3
+            W_M4 = self.g * m_motor4
+            W_M5 = self.g * m_motor5
+            W_M6 = self.g * m_motor6
             
-            # Calculate torques (following pseudocode exactly)
-            T2_payload = W_P * (S6 - M2)
-            T2_L6 = W_L6 * (S6 - M2 - L6/2)
-            T2_L5 = W_L5 * (S5 - M2 - L5/2)
-            T2_L4 = W_L4 * (S4 - M2 - L4/2)
-            T2_L3 = W_L3 * (S3 - M2 - L3/2)
-            T2_L2 = W_L2 * (S2 - M2 - L2/2)
-            T2_M6 = W_M6 * ((M6 + a6/2) - M2)
-            T2_M5 = W_M5 * ((M5 + a5/2) - M2)
-            T2_M4 = W_M4 * ((M4 + a4/2) - M2)
-            T2_M3 = W_M3 * ((M3 + a3/2) - M2)
-            T2_total = T2_payload + T2_L6 + T2_L5 + T2_L4 + T2_L3 + T2_L2 + T2_M6 + T2_M5 + T2_M4 + T2_M3
+            W_P = self.g * m_payload
             
-            T2_sf = SF2 * T2_total
-            T2_before = T2_total / R2 if R2 != 0 else 0
-            T2_before_sf = SF2 * T2_before
-            P2 = (T2_before * rpm2 * 1000 / 9550) if rpm2 != 0 else 0
-            P2_sf = SF2 * P2
+            # Motor positions (from input parameters)
+            M1_pos = self.get_float_value(self.M1)
+            M2_pos = self.get_float_value(self.M2)
+            M3_pos = self.get_float_value(self.M3)
+            M4_pos = self.get_float_value(self.M4)
+            M5_pos = self.get_float_value(self.M5)
+            M6_pos = self.get_float_value(self.M6)
             
-            self.motor_specs[2] = get_motor_specs(2, T2_sf, P2_sf)
+            a1_val = self.get_float_value(self.a1)
+            a2_val = self.get_float_value(self.a2)
+            a3_val = self.get_float_value(self.a3)
+            a4_val = self.get_float_value(self.a4)
+            a5_val = self.get_float_value(self.a5)
+            a6_val = self.get_float_value(self.a6)
             
-            return {
-                'total_torque': T2_total,
-                'total_torque_sf': T2_sf,
-                'torque_before_reduction': T2_before,
-                'torque_before_reduction_sf': T2_before_sf,
-                'power': P2,
-                'power_sf': P2_sf
-            }
+            # Calculate torque based on motor number using new formulas
+            if motor_num == 6:
+                T_total = W_P * (S6 - M6_pos) + W_L6 * (S6 - M6_pos - L6/2)
+            elif motor_num == 5:
+                T_total = (W_P * (S6 - M5_pos) + 
+                          W_L6 * (S6 - M5_pos - L6/2) +
+                          W_M6 * ((M6_pos + a6_val/2) - M5_pos) +
+                          W_L5 * (S5 - M5_pos - L5/2))
+            elif motor_num == 4:
+                T_total = (W_P * (S6 - M4_pos) +
+                          W_L6 * (S6 - M4_pos - L6/2) +
+                          W_L5 * (S5 - M4_pos - L5/2) +
+                          W_M6 * ((M6_pos + a6_val/2) - M4_pos) +
+                          W_M5 * ((M5_pos + a5_val/2) - M4_pos) +
+                          W_L4 * (S4 - M4_pos - L4/2))
+            elif motor_num == 3:
+                T_total = (W_P * (S6 - M3_pos) +
+                          W_L6 * (S6 - M3_pos - L6/2) +
+                          W_L5 * (S5 - M3_pos - L5/2) +
+                          W_L4 * (S4 - M3_pos - L4/2) +
+                          W_M6 * ((M6_pos + a6_val/2) - M3_pos) +
+                          W_M5 * ((M5_pos + a5_val/2) - M3_pos) +
+                          W_M4 * ((M4_pos + a4_val/2) - M3_pos) +
+                          W_L3 * (S3 - M3_pos - L3/2))
+            elif motor_num == 2:
+                T_total = (W_P * (S6 - M2_pos) +
+                          W_L6 * (S6 - M2_pos - L6/2) +
+                          W_L5 * (S5 - M2_pos - L5/2) +
+                          W_L4 * (S4 - M2_pos - L4/2) +
+                          W_L3 * (S3 - M2_pos - L3/2) +
+                          W_L2 * (S2 - M2_pos - L2/2) +
+                          W_M6 * ((M6_pos + a6_val/2) - M2_pos) +
+                          W_M5 * ((M5_pos + a5_val/2) - M2_pos) +
+                          W_M4 * ((M4_pos + a4_val/2) - M2_pos) +
+                          W_M3 * ((M3_pos + a3_val/2) - M2_pos))
+            elif motor_num == 1:
+                T_total = (W_P * (S6 - M1_pos) +
+                          W_L6 * (S6 - M1_pos - L6/2) +
+                          W_L5 * (S5 - M1_pos - L5/2) +
+                          W_L4 * (S4 - M1_pos - L4/2) +
+                          W_L3 * (S3 - M1_pos - L3/2) +
+                          W_L2 * (S2 - M1_pos - L2/2) +
+                          (W_L1 * (S1 - M1_pos - L1/2) if L1 > 0 else 0) +
+                          W_M6 * ((M6_pos + a6_val/2) - M1_pos) +
+                          W_M5 * ((M5_pos + a5_val/2) - M1_pos) +
+                          W_M4 * ((M4_pos + a4_val/2) - M1_pos) +
+                          W_M3 * ((M3_pos + a3_val/2) - M1_pos) +
+                          W_M2 * ((M2_pos + a2_val/2) - M1_pos))
             
+            # Apply safety factor if requested
+            if with_sf:
+                T_total_sf = SF * T_total
+                T_before_sf = (T_total / R * SF) if R != 0 else 0
+                P_sf = (T_total / R * rpm * 1000 / 9550 * SF) if (rpm != 0 and R != 0) else 0
+                return {
+                    'total_torque_sf': T_total_sf,
+                    'torque_before_reduction_sf': T_before_sf,
+                    'power_sf': P_sf
+                }
+            else:
+                T_before = T_total / R if R != 0 else 0
+                P = (T_before * rpm * 1000 / 9550) if rpm != 0 else 0
+                return {
+                    'total_torque': T_total,
+                    'torque_before_reduction': T_before,
+                    'power': P,
+                    'safety_factor': SF
+                }
+                
         except Exception as e:
-            print(f"Error in Motor 2 calculation: {e}")
+            print(f"Error calculating Motor {motor_num}: {e}")
             return self.get_zero_results()
-    
-    def calculate_motor1_torque_and_power(self):
-        """Calculate Motor 1 torque and power requirements"""
-        try:
-            # Get parameters
-            payload_mass = self.get_float_value(self.payload_mass)
-            link_density = self.get_float_value(self.link_density)
-            L6 = self.get_float_value(self.link6_length)
-            r6 = self.get_float_value(self.link6_radius)
-            L5 = self.get_float_value(self.link5_length)
-            r5 = self.get_float_value(self.link5_radius)
-            L4 = self.get_float_value(self.link4_length)
-            r4 = self.get_float_value(self.link4_radius)
-            L3 = self.get_float_value(self.link3_length)
-            r3 = self.get_float_value(self.link3_radius)
-            L2 = self.get_float_value(self.link2_length)
-            r2 = self.get_float_value(self.link2_radius)
-            L1 = self.get_float_value(self.link1_length)
-            r1 = self.get_float_value(self.link1_radius)
-            M1 = self.get_float_value(self.motor1_pivot)
-            M2 = self.get_float_value(self.motor2_pivot)
-            M3 = self.get_float_value(self.motor3_pivot)
-            M4 = self.get_float_value(self.motor4_pivot)
-            M5 = self.get_float_value(self.motor5_pivot)
-            M6 = self.get_float_value(self.motor6_pivot)
-            a2 = self.get_float_value(self.motor2_length)
-            a3 = self.get_float_value(self.motor3_length)
-            a4 = self.get_float_value(self.motor4_length)
-            a5 = self.get_float_value(self.motor5_length)
-            a6 = self.get_float_value(self.motor6_length)
-            rpm1 = self.get_int_value(self.motor1_rpm)
-            R1 = self.get_int_value(self.reduction_ratio_m1)
-            SF1 = self.get_float_value(self.safety_factor_m1)
-            
-            # Get joint positions
-            S1, S2, S3, S4, S5, S6 = self.get_joint_positions()
-            
-            # Calculate weights
-            W_P = self.g * payload_mass
-            W_L6 = self.g * link_density * self.PI * r6**2 * L6
-            W_L5 = self.g * link_density * self.PI * r5**2 * L5
-            W_L4 = self.g * link_density * self.PI * r4**2 * L4
-            W_L3 = self.g * link_density * self.PI * r3**2 * L3
-            W_L2 = self.g * link_density * self.PI * r2**2 * L2
-            W_L1 = self.g * link_density * self.PI * r1**2 * L1
-            m_motor6 = self.motor_specs.get(6, {'motor_weight': 0.0})['motor_weight']
-            m_motor5 = self.motor_specs.get(5, {'motor_weight': 0.0})['motor_weight']
-            m_motor4 = self.motor_specs.get(4, {'motor_weight': 0.0})['motor_weight']
-            m_motor3 = self.motor_specs.get(3, {'motor_weight': 0.0})['motor_weight']
-            m_motor2 = self.motor_specs.get(2, {'motor_weight': 0.0})['motor_weight']
     
     def get_zero_results(self):
         """Return zero results in case of calculation error"""
@@ -885,14 +650,24 @@ class RobotArmCalculator:
             'torque_before_reduction': 0.0,
             'torque_before_reduction_sf': 0.0,
             'power': 0.0,
-            'power_sf': 0.0
+            'power_sf': 0.0,
+            'safety_factor': 1.0
         }
     
-    def update_results_display(self, motor_num, results):
+    def update_results_display(self, motor_num, results_normal, results_sf):
         """Update the results display for a specific motor"""
         try:
-            # Get motor specs using normal torque and power
-            specs = get_motor_specs(motor_num, results['total_torque'], results['power'])
+            specs = self.motor_specs_normal.get(motor_num, {
+                'motor': f"Motor {motor_num}",
+                'power_rating': 0.0,
+                'flange_size': 0.0,
+                'voltage_type': 'N/A',
+                'model_name': 'N/A',
+                'company_name': 'N/A',
+                'price': 0.0,
+                'motor_weight': 0.0
+            })
+            
             values = [
                 specs['motor'],
                 specs['power_rating'],
@@ -902,12 +677,12 @@ class RobotArmCalculator:
                 specs['company_name'],
                 specs['price'],
                 specs['motor_weight'],
-                results['total_torque'],
-                results['total_torque_sf'],
-                results['torque_before_reduction'],
-                results['torque_before_reduction_sf'],
-                results['power'],
-                results['power_sf']
+                results_normal['total_torque'],
+                results_sf['total_torque_sf'],
+                results_normal['torque_before_reduction'],
+                results_sf['torque_before_reduction_sf'],
+                results_normal['power'],
+                results_sf['power_sf']
             ]
             
             for i, value in enumerate(values):
@@ -941,34 +716,59 @@ class RobotArmCalculator:
                     f"{values[5]:.3f}"
                 ))
             
-            # Update Motor Specifications Table (Normal Torque and Power)
+            # Update Motor Specifications Table (Normal)
             for item in self.new_tree.get_children():
                 self.new_tree.delete(item)
             
             for motor_num in range(1, 7):
-                values = self.all_results.get(motor_num, [f"Motor {motor_num}"] + ["N/A"] * 13)[0:8]
-                self.new_tree.insert("", "end", values=tuple([str(v) for v in values]))
+                specs = self.motor_specs_normal.get(motor_num, {
+                    'motor': f"Motor {motor_num}",
+                    'power_rating': 0.0,
+                    'flange_size': 0.0,
+                    'voltage_type': 'N/A',
+                    'model_name': 'N/A',
+                    'company_name': 'N/A',
+                    'price': 0.0,
+                    'motor_weight': 0.0
+                })
+                values = [
+                    specs['motor'],
+                    f"{specs['power_rating']:.3f}" if isinstance(specs['power_rating'], float) else specs['power_rating'],
+                    f"{specs['flange_size']:.1f}" if isinstance(specs['flange_size'], float) else specs['flange_size'],
+                    specs['voltage_type'],
+                    specs['model_name'],
+                    specs['company_name'],
+                    f"{specs['price']:.2f}" if isinstance(specs['price'], float) else specs['price'],
+                    f"{specs['motor_weight']:.3f}" if isinstance(specs['motor_weight'], float) else specs['motor_weight']
+                ]
+                self.new_tree.insert("", "end", values=tuple(values))
             
             # Update Motor Specifications with Safety Factor Table
             for item in self.sf_tree.get_children():
                 self.sf_tree.delete(item)
             
             for motor_num in range(1, 7):
-                # Get motor specs using torque and power with safety factor
-                total_torque_sf = self.all_results.get(motor_num, [0] * 14)[9]
-                power_sf = self.all_results.get(motor_num, [0] * 14)[13]
-                specs = get_motor_specs(motor_num, total_torque_sf, power_sf)
+                specs = self.motor_specs_sf.get(motor_num, {
+                    'motor': f"Motor {motor_num}",
+                    'power_rating': 0.0,
+                    'flange_size': 0.0,
+                    'voltage_type': 'N/A',
+                    'model_name': 'N/A',
+                    'company_name': 'N/A',
+                    'price': 0.0,
+                    'motor_weight': 0.0
+                })
                 values = [
                     specs['motor'],
-                    specs['power_rating'],
-                    specs['flange_size'],
+                    f"{specs['power_rating']:.3f}" if isinstance(specs['power_rating'], float) else specs['power_rating'],
+                    f"{specs['flange_size']:.1f}" if isinstance(specs['flange_size'], float) else specs['flange_size'],
                     specs['voltage_type'],
                     specs['model_name'],
                     specs['company_name'],
-                    specs['price'],
-                    specs['motor_weight']
+                    f"{specs['price']:.2f}" if isinstance(specs['price'], float) else specs['price'],
+                    f"{specs['motor_weight']:.3f}" if isinstance(specs['motor_weight'], float) else specs['motor_weight']
                 ]
-                self.sf_tree.insert("", "end", values=tuple([f"{v:.3f}" if isinstance(v, float) else str(v) for v in values]))
+                self.sf_tree.insert("", "end", values=tuple(values))
                 
         except Exception as e:
             print(f"Error updating table display: {e}")
@@ -997,18 +797,8 @@ class RobotArmCalculator:
                 "Motor Weight (kg)"
             ]
             
-            sf_headers = [
-                "Motor",
-                "Power Rating (W)",
-                "Flange Size (mm)",
-                "Voltage Type",
-                "Model Name",
-                "Company Name",
-                "Price ($)",
-                "Motor Weight (kg)"
-            ]
-            
             data = []
+            
             # Add Torque and Power Results Table
             data.append(["Torque and Power Results"])
             data.append(old_headers)
@@ -1027,11 +817,30 @@ class RobotArmCalculator:
             # Add separator
             data.append([])
             
-            # Add Motor Specifications Table (Normal Torque and Power)
-            data.append(["Motor Specifications"])
+            # Add Motor Specifications Table (Normal)
+            data.append(["Motor Specifications (Normal)"])
             data.append(new_headers)
             for motor_num in range(1, 7):
-                values = self.all_results.get(motor_num, [f"Motor {motor_num}"] + ["N/A"] * 13)[0:8]
+                specs = self.motor_specs_normal.get(motor_num, {
+                    'motor': f"Motor {motor_num}",
+                    'power_rating': 0.0,
+                    'flange_size': 0.0,
+                    'voltage_type': 'N/A',
+                    'model_name': 'N/A',
+                    'company_name': 'N/A',
+                    'price': 0.0,
+                    'motor_weight': 0.0
+                })
+                values = [
+                    specs['motor'],
+                    specs['power_rating'],
+                    specs['flange_size'],
+                    specs['voltage_type'],
+                    specs['model_name'],
+                    specs['company_name'],
+                    specs['price'],
+                    specs['motor_weight']
+                ]
                 data.append([str(v) for v in values])
             
             # Add separator
@@ -1039,11 +848,18 @@ class RobotArmCalculator:
             
             # Add Motor Specifications with Safety Factor Table
             data.append(["Motor Specifications with Safety Factor"])
-            data.append(sf_headers)
+            data.append(new_headers)
             for motor_num in range(1, 7):
-                total_torque_sf = self.all_results.get(motor_num, [0] * 14)[9]
-                power_sf = self.all_results.get(motor_num, [0] * 14)[13]
-                specs = get_motor_specs(motor_num, total_torque_sf, power_sf)
+                specs = self.motor_specs_sf.get(motor_num, {
+                    'motor': f"Motor {motor_num}",
+                    'power_rating': 0.0,
+                    'flange_size': 0.0,
+                    'voltage_type': 'N/A',
+                    'model_name': 'N/A',
+                    'company_name': 'N/A',
+                    'price': 0.0,
+                    'motor_weight': 0.0
+                })
                 values = [
                     specs['motor'],
                     specs['power_rating'],
@@ -1056,7 +872,7 @@ class RobotArmCalculator:
                 ]
                 data.append([f"{v:.3f}" if isinstance(v, float) else str(v) for v in values])
             
-            with open("robot_arm_results.csv", "w", newline="") as f:
+            with open("robot_arm_results.csv", "w", newline="", encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerows(data)
             
@@ -1068,12 +884,35 @@ class RobotArmCalculator:
     def calculate_all(self):
         """Calculate torque and power for all motors and update diagram"""
         try:
-            # Calculate in reverse order (6 to 1) to ensure motor weights are available
-            self.motor_specs = {}  # Reset motor specs
+            # Calculate for motors 6 to 1 (dependencies flow backwards)
+            normal_results = {}
+            sf_results = {}
             
-            for motor_num in range(6, 0, -1):  # 6, 5, 4, 3, 2, 1
-                results = self.calculate_motor_torque_and_power(motor_num)
-                self.update_results_display(motor_num, results)
+            # First calculate all motors without SF to get motor weights
+            for motor_num in range(6, 0, -1):
+                # Calculate normal torque and power
+                results_normal = self.calculate_motor_torque_power(motor_num, with_sf=False)
+                normal_results[motor_num] = results_normal
+                
+                # Get motor specs based on normal calculations
+                total_torque = results_normal['total_torque']
+                power = results_normal['power']
+                self.motor_specs_normal[motor_num] = get_motor_specs(motor_num, total_torque, power)
+            
+            # Then calculate all motors with SF using updated motor weights
+            for motor_num in range(6, 0, -1):
+                # Calculate SF torque and power
+                results_sf = self.calculate_motor_torque_power(motor_num, with_sf=True)
+                sf_results[motor_num] = results_sf
+                
+                # Get motor specs based on SF calculations
+                total_torque_sf = results_sf['total_torque_sf']
+                power_sf = results_sf['power_sf']
+                self.motor_specs_sf[motor_num] = get_motor_specs(motor_num, total_torque_sf, power_sf)
+            
+            # Update displays
+            for motor_num in range(1, 7):
+                self.update_results_display(motor_num, normal_results[motor_num], sf_results[motor_num])
             
             self.update_table_display()
             self.update_diagram()
@@ -1088,7 +927,7 @@ def main():
         root = tk.Tk()
         app = RobotArmCalculator(root)
         
-        root.minsize(1000, 700)
+        root.minsize(1200, 800)
         
         root.update_idletasks()
         x = (root.winfo_screenwidth() // 2) - (root.winfo_width() // 2)
@@ -1118,83 +957,76 @@ def main():
 def reset_to_defaults(app):
     """Reset all values to defaults"""
     try:
+        # Global parameters
         app.payload_mass.set("5.0")
         app.link_density.set("7850.0")
         
-        # Link parameters
-        app.link1_length.set("0.2")
-        app.link1_radius.set("0.04")
-        app.link2_length.set("0.3")
-        app.link2_radius.set("0.035")
-        app.link3_length.set("0.25")
-        app.link3_radius.set("0.03")
-        app.link4_length.set("0.25")
-        app.link4_radius.set("0.025")
-        app.link5_length.set("0.3")
-        app.link5_radius.set("0.025")
-        app.link6_length.set("0.2")
-        app.link6_radius.set("0.02")
+        # Link dimensions
+        app.L6.set("0.2")
+        app.L5.set("0.3")
+        app.L4.set("0.25")
+        app.L3.set("0.25")
+        app.L2.set("0.3")
+        app.L1.set("0.0")
         
-        # Motor pivot positions
-        app.motor1_pivot.set("0.0")
-        app.motor2_pivot.set("0.2")
-        app.motor3_pivot.set("0.5")
-        app.motor4_pivot.set("0.75")
-        app.motor5_pivot.set("1.0")
-        app.motor6_pivot.set("1.3")
+        app.r6.set("0.02")
+        app.r5.set("0.025")
+        app.r4.set("0.025")
+        app.r3.set("0.03")
+        app.r2.set("0.035")
+        app.r1.set("0.04")
+        
+        # Motor pivot positions (calculated from cumulative link lengths)
+        app.M6.set("1.25")  # L1+L2+L3+L4+L5
+        app.M5.set("1.0")   # L1+L2+L3+L4
+        app.M4.set("0.75")  # L1+L2+L3
+        app.M3.set("0.5")   # L1+L2
+        app.M2.set("0.25")  # L1
+        app.M1.set("0.0")
         
         # Motor body lengths
-        app.motor1_length.set("0.15")
-        app.motor2_length.set("0.12")
-        app.motor3_length.set("0.15")
-        app.motor4_length.set("0.12")
-        app.motor5_length.set("0.12")
-        app.motor6_length.set("0.1")
+        app.a6.set("0.1")
+        app.a5.set("0.12")
+        app.a4.set("0.12")
+        app.a3.set("0.15")
+        app.a2.set("0.18")
+        app.a1.set("0.2")
         
-        # Motor parameters
-        for i in range(1, 7):
-            getattr(app, f'motor{i}_rpm').set("3000")
-            getattr(app, f'reduction_ratio_m{i}').set("50")
-            getattr(app, f'safety_factor_m{i}').set("1.5")
+        # Motor RPM
+        app.rpm6.set("3000")
+        app.rpm5.set("3000")
+        app.rpm4.set("3000")
+        app.rpm3.set("3000")
+        app.rpm2.set("3000")
+        app.rpm1.set("3000")
+        
+        # Reduction ratios
+        app.R6.set("50")
+        app.R5.set("50")
+        app.R4.set("50")
+        app.R3.set("50")
+        app.R2.set("50")
+        app.R1.set("50")
+        
+        # Safety factors
+        app.SF6.set("1.5")
+        app.SF5.set("1.5")
+        app.SF4.set("1.5")
+        app.SF3.set("1.5")
+        app.SF2.set("1.5")
+        app.SF1.set("1.5")
+        
+        app.calculate_all()
         
     except Exception as e:
-        messagebox.showerror("Error", f"Error resetting to defaults: {str(e)}")
+        messagebox.showerror("Error", f"Failed to reset to defaults: {str(e)}")
 
-def show_about_dialog(parent):
+def show_about_dialog(root):
     """Show about dialog"""
-    about_text = """6DOF Robotic Arm Torque and Power Calculator
-
-This application calculates the torque and power requirements for each motor in a 6DOF robotic arm using static analysis with arbitrary motor pivot positions.
-
-Features:
-- Real-time calculations with new arbitrary pivot position formulas
-- Comprehensive torque analysis for each joint
-- Configurable motor pivot positions and body lengths
-- Safety factor considerations
-- Gear reduction calculations
-- Power requirements in Watts
-- Triple table view of results
-- Export results to CSV
-- Arm diagram visualization
-- Automated motor selection
-
-Mathematical Approach:
-- Static worst-case analysis with arbitrary motor pivot positions
-- Joint position calculations (S1, S2, S3, S4, S5, S6)
-- Motor center of mass considerations
-- Moment calculations about each motor pivot point
-- Uniform cylindrical link modeling
-
-New Formula Features:
-- Arbitrary motor pivot positions (M1-M6)
-- Motor body lengths for center of mass calculations
-- More accurate torque calculations considering all upstream loads
-
-Senior Developer: M Hassan Shahzad
-Junior Developer: Basil Saeed Bari
-Version: 2.0"""
-    
-    messagebox.showinfo("About", about_text)
+    messagebox.showinfo(
+        "About",
+        "6DOF Robotic Arm Torque and Power Calculator\nVersion 2.0\nUpdated with new formulas and parameters\nDeveloped for robotic arm design."
+    )
 
 if __name__ == "__main__":
     main()
